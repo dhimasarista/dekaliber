@@ -8,6 +8,11 @@ out-tsc
 # dependencies
 node_modules
 
+# secrets
+.env
+.env.local
+!.env.example
+
 # IDEs and editors
 /.idea
 .project
@@ -33,6 +38,7 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+*.tsbuildinfo
 
 # System Files
 .DS_Store
@@ -43,3 +49,7 @@ Thumbs.db
 .nx/migrate-runs
 .claude/worktrees
 .claude/settings.local.json
+
+# benchmark runtime output
+/storage/*.sqlite*
+/results-raw/*.log

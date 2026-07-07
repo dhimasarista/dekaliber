@@ -1,0 +1,27 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client"
+  output        = "../src/generated/prisma"
+  moduleFormat  = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Entity generik untuk stress-test CRUD (§6 README) — tidak merepresentasikan
+// domain bisnis apa pun, sengaja sederhana supaya biaya serialisasi/ORM minim
+// dan tidak jadi sumber noise saat membandingkan Nest vs Spring Boot.
+model Resource {
+  id        String   @id @default(uuid())
+  label     String
+  value     Int
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}

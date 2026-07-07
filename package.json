@@ -2,9 +2,18 @@
   "name": "@dekaliber/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "orchestrator": "node packages/orchestrator/test-runner-service/src/server.mjs",
+    "storage:init": "node packages/orchestrator/test-runner-service/src/init-storage.mjs",
+    "test": "node --test packages/orchestrator/test-runner-service/test/*.test.mjs",
+    "quality": "npm run storage:init && npm test && npm run typecheck",
+    "typecheck": "tsc --noEmit"
+  },
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "@types/ws": "^8.18.1",
+    "ws": "^8.21.0"
+  },
   "devDependencies": {
     "@nx/js": "23.0.1",
     "@swc/helpers": "~0.5.18",

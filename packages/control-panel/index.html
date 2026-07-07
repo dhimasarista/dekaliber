@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaliber — Control Panel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 640px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 32px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 24px;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+  }
+
+  .tab-btn.active {
+    color: #1a1a1a;
+    border-bottom-color: #1a1a1a;
+  }
+
+  .form-mode { display: none; }
+  .form-mode.active { display: block; }
+
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: #333;
+  }
+
+  .field select,
+  .field input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .checkbox-row label {
+    font-size: 13px;
+    color: #333;
+  }
+
+  .concurrency-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .concurrency-row label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 400;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  .trigger-btn {
+    width: 100%;
+    padding: 12px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  .trigger-btn:hover { background: #333; }
+
+  /* Status / live panel */
+  .status-panel {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .status-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eee;
+    color: #666;
+  }
+
+  .status-badge.running { background: #fff3cd; color: #856404; }
+  .status-badge.done { background: #d4edda; color: #155724; }
+  .status-badge.failed { background: #f8d7da; color: #721c24; }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .metric-box {
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px 4px;
+  }
+
+  .metric-box .value {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .metric-box .label {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  .log-box {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #555;
+    height: 100px;
+    overflow-y: auto;
+  }
+
+  /* History */
+  .history {
+    margin-top: 20px;
+  }
+
+  .history h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    color: #888;
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .empty-row td {
+    text-align: center;
+    color: #aaa;
+    padding: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>Kaliber Control Panel</h1>
+  <p class="subtitle">Trigger test dan pantau hasil secara langsung</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-mode="frontend">Uji Frontend</button>
+    <button class="tab-btn" data-mode="backend">Uji Backend</button>
+  </div>
+
+  <!-- MODE: FRONTEND -->
+  <div class="form-mode active" id="mode-frontend">
+    <div class="field">
+      <label for="fe-target">Target Frontend</label>
+      <select id="fe-target">
+        <option value="nextjs">Next.js</option>
+        <option value="nuxtjs">Nuxt.js</option>
+        <option value="analogjs">AnalogJS</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fe-port">Port</label>
+      <input type="number" id="fe-port" placeholder="contoh: 3000">
+    </div>
+    <button class="trigger-btn" onclick="triggerTest('frontend')">Mulai Uji Frontend</button>
+  </div>
+
+  <!-- MODE: BACKEND -->
+  <div class="form-mode" id="mode-backend">
+    <div class="field">
+      <label for="be-target">Target Backend</label>
+      <select id="be-target">
+        <option value="nestjs">NestJS</option>
+        <option value="springboot-kotlin">Spring Boot (Kotlin)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="be-scenario">Skenario</label>
+      <select id="be-scenario">
+        <option value="read_light">Read Light</option>
+        <option value="read_heavy">Read Heavy</option>
+        <option value="write_transactional">Write Transactional</option>
+        <option value="cache_hit_miss">Cache Hit/Miss</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="be-duration">Durasi (menit)</label>
+      <input type="number" id="be-duration" value="5">
+    </div>
+    <div class="field">
+      <label for="be-warmup">Warm-up (menit)</label>
+      <input type="number" id="be-warmup" value="2">
+    </div>
+    <div class="field">
+      <label>Concurrency Level</label>
+      <div class="concurrency-row">
+        <label><input type="checkbox" value="100" checked> 100</label>
+        <label><input type="checkbox" value="500"> 500</label>
+        <label><input type="checkbox" value="1000"> 1000</label>
+        <label><input type="checkbox" value="5000"> 5000</label>
+      </div>
+    </div>
+    <div class="field">
+      <div class="checkbox-row">
+        <input type="checkbox" id="be-pg" checked>
+        <label for="be-pg">Aktifkan PostgreSQL</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="be-redis">
+        <label for="be-redis">Aktifkan Redis</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="be-rawsql">
+        <label for="be-rawsql">Mode Raw SQL (bypass ORM)</label>
+      </div>
+    </div>
+    <button class="trigger-btn" onclick="triggerTest('backend')">Mulai Uji Backend</button>
+  </div>
+
+  <!-- STATUS / LIVE PANEL -->
+  <div class="status-panel">
+    <div class="status-header">
+      <h2>Status Live</h2>
+      <span class="status-badge" id="status-badge">Idle</span>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-box">
+        <div class="value" id="m-rps">—</div>
+        <div class="label">RPS</div>
+      </div>
+      <div class="metric-box">
+        <div class="value" id="m-p95">—</div>
+        <div class="label">p95 (ms)</div>
+      </div>
+      <div class="metric-box">
+        <div class="value" id="m-p99">—</div>
+        <div class="label">p99 (ms)</div>
+      </div>
+      <div class="metric-box">
+        <div class="value" id="m-mem">—</div>
+        <div class="label">Memory (MB)</div>
+      </div>
+    </div>
+    <div class="log-box" id="log-box">Menunggu test dimulai...</div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history">
+    <h2>Riwayat Run</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Waktu</th>
+          <th>Mode</th>
+          <th>Target</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <tr class="empty-row"><td colspan="4">Belum ada riwayat run</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.form-mode').forEach(f => f.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('mode-' + btn.dataset.mode).classList.add('active');
+    });
+  });
+
+  const orchestratorUrl = window.ORCHESTRATOR_URL || 'http://localhost:4100';
+
+  function appendLog(message) {
+    const log = document.getElementById('log-box');
+    log.textContent = `${log.textContent}\n${message}`.trim();
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setStatus(status) {
+    const badge = document.getElementById('status-badge');
+    badge.textContent = status;
+    badge.className = `status-badge ${status.toLowerCase()}`;
+  }
+
+  function readBackendPayload() {
+    return {
+      mode: 'backend',
+      target_backend: document.getElementById('be-target').value,
+      scenario: document.getElementById('be-scenario').value,
+      duration_minutes: Number(document.getElementById('be-duration').value),
+      warmup_minutes: Number(document.getElementById('be-warmup').value),
+      concurrency_levels: Array.from(document.querySelectorAll('.concurrency-row input:checked')).map(input => Number(input.value)),
+      database: {
+        postgresql_enabled: document.getElementById('be-pg').checked,
+        redis_enabled: document.getElementById('be-redis').checked
+      },
+      raw_sql_mode: document.getElementById('be-rawsql').checked
+    };
+  }
+
+  function readFrontendPayload() {
+    return {
+      mode: 'frontend',
+      target_frontend: document.getElementById('fe-target').value,
+      port: Number(document.getElementById('fe-port').value)
+    };
+  }
+
+  async function refreshHistory() {
+    const response = await fetch(`${orchestratorUrl}/test-runs`);
+    const runs = await response.json();
+    const body = document.getElementById('history-body');
+    body.innerHTML = runs.length
+      ? runs.map(run => `
+          <tr>
+            <td>${new Date(run.started_at).toLocaleString('id-ID')}</td>
+            <td>${run.mode}</td>
+            <td>${run.target}</td>
+            <td>${run.status}</td>
+          </tr>
+        `).join('')
+      : '<tr class="empty-row"><td colspan="4">Belum ada riwayat run</td></tr>';
+  }
+
+  async function triggerTest(mode) {
+    setStatus('Running');
+    document.getElementById('log-box').textContent = `Mengirim trigger ${mode} ke orchestrator...`;
+
+    const payload = mode === 'frontend' ? readFrontendPayload() : readBackendPayload();
+    const response = await fetch(`${orchestratorUrl}/test-runs`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      setStatus('Failed');
+      appendLog(`Gagal: ${result.error}`);
+      return;
+    }
+
+    setStatus(result.status);
+    appendLog(`Run dibuat: ${result.id}`);
+    if (result.summary_json) appendLog(result.summary_json);
+    await refreshHistory();
+  }
+
+  refreshHistory().catch(() => appendLog('Riwayat belum tersedia. Pastikan orchestrator berjalan.'));
+</script>
+
+</body>
+</html>
