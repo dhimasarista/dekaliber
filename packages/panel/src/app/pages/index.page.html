@@ -27,7 +27,7 @@
       </div>
     </header>
 
-    <section class="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
+    <section class="grid gap-3 sm:grid-cols-4 xl:grid-cols-7">
       @for (card of metricCards(); track card.label) {
         <div class="rounded-md border border-line border-l-4 bg-card p-3 shadow-[2px_2px_0_0_rgba(47,37,23,0.08)]" [class]="borderClass(card.color)">
           <div class="font-serif text-[11px] uppercase tracking-wide" [class]="textClass(card.color)">{{ card.label }}</div>
@@ -351,6 +351,17 @@
               </tbody>
             </table>
           </div>
+
+          @if (summary.memory) {
+            <div class="mt-2 rounded border border-line border-l-4 bg-paper px-3 py-2 text-xs" [class]="borderClass('clay')">
+              <div class="text-ink-faint">Memory (as reported by target)</div>
+              <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono text-ink">
+                @for (entry of memoryEntries(summary.memory); track entry.key) {
+                  <span>{{ entry.key }}: {{ entry.value }}</span>
+                }
+              </div>
+            </div>
+          }
 
           @if (summary.error) {
             <div class="mt-2 rounded border border-rust/40 bg-paper px-3 py-2 text-xs text-rust">{{ summary.error }}</div>

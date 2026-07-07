@@ -41,6 +41,10 @@ export interface RunSnapshot {
   totals: RunTotals;
   generatorCeilingRps: number | null;
   referenceCeilingRps: number | null;
+  // Bentuk bebas -- tiap backend melaporkan field metrics-nya sendiri lewat
+  // GET /metrics (NestJS: rssMB dst, Spring Boot: heapUsedMB dst). null kalau
+  // target tidak punya endpoint itu atau targetnya ceiling (dummy self-check).
+  memory: Record<string, number> | null;
   error?: string;
 }
 
@@ -58,8 +62,10 @@ interface RunState {
   totals: RunTotals;
   windowCount: number;
   idPool: string[];
+  memory: Record<string, number> | null;
   requestTimer?: ReturnType<typeof setInterval>;
   uiTimer?: ReturnType<typeof setInterval>;
+  memoryTimer?: ReturnType<typeof setInterval>;
   phaseTimer?: ReturnType<typeof setTimeout>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   listeners: Set<Listener>;
@@ -196,6 +202,17 @@ function fire(state: RunState): void {
     .catch(() => recordSample(state, performance.now() - t0, false));
 }
 
+async function pollMemory(state: RunState): Promise<void> {
+  try {
+    const res = await fetch(`${state.baseUrl}/metrics`);
+    if (!res.ok) return;
+    const body = (await res.json()) as Record<string, number>;
+    state.memory = body;
+  } catch {
+    // target tidak (atau belum) mengimplementasikan GET /metrics -- diamkan
+  }
+}
+
 function publish(state: RunState, event: string, data: unknown): void {
   for (const listener of state.listeners) listener(event, data);
 }
@@ -211,6 +228,7 @@ function buildSnapshot(state: RunState): RunSnapshot {
     totals: { ...state.totals },
     generatorCeilingRps: null,
     referenceCeilingRps: latestCeilingRps(),
+    memory: state.memory,
     error: state.error,
   };
 }
@@ -218,6 +236,7 @@ function buildSnapshot(state: RunState): RunSnapshot {
 function finishRun(state: RunState, phase: 'done' | 'failed'): void {
   clearInterval(state.requestTimer);
   clearInterval(state.uiTimer);
+  clearInterval(state.memoryTimer);
   clearTimeout(state.phaseTimer);
   state.phase = phase;
   state.finishedAt = Date.now();
@@ -257,6 +276,7 @@ export function startRun(config: RunConfig, selfOrigin: string): RunSnapshot {
     totals: { sent: 0, ok: 0, failed: 0 },
     windowCount: 0,
     idPool: [],
+    memory: null,
     listeners: new Set(),
   };
 
@@ -272,6 +292,11 @@ export function startRun(config: RunConfig, selfOrigin: string): RunSnapshot {
   });
 
   state.requestTimer = setInterval(() => fire(state), Math.max(1, config.request_interval_ms));
+
+  if (config.target_port !== null) {
+    void pollMemory(state);
+    state.memoryTimer = setInterval(() => void pollMemory(state), 2000);
+  }
 
   if (warmupMs > 0) {
     state.phaseTimer = setTimeout(() => {

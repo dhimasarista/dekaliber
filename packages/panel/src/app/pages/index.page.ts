@@ -58,6 +58,7 @@ interface RunSnapshot {
   totals: { sent: number; ok: number; failed: number };
   generatorCeilingRps: number | null;
   referenceCeilingRps: number | null;
+  memory: Record<string, number> | null;
   error?: string;
 }
 
@@ -79,7 +80,7 @@ const scenarios: Array<{ value: Scenario; label: string; description: string; co
   { value: 'mixed_crud', label: 'Mixed CRUD', description: 'Weighted mix', color: 'moss' },
 ];
 
-const METRIC_COLORS = ['rust', 'mustard', 'brass', 'moss', 'teal', 'plum'];
+const METRIC_COLORS = ['rust', 'mustard', 'brass', 'moss', 'clay', 'teal', 'plum'];
 
 const DEFAULT_TARGETS: SavedTarget[] = [
   { id: 'nestjs', label: 'NestJS', port: 3000 },
@@ -98,6 +99,7 @@ const COLOR_BORDER: Record<string, string> = {
   brass: 'border-brass',
   teal: 'border-teal',
   plum: 'border-plum',
+  clay: 'border-clay',
 };
 const COLOR_TEXT: Record<string, string> = {
   rust: 'text-rust',
@@ -106,12 +108,14 @@ const COLOR_TEXT: Record<string, string> = {
   brass: 'text-brass',
   teal: 'text-teal',
   plum: 'text-plum',
+  clay: 'text-clay',
 };
 const COLOR_DOT: Record<string, string> = {
   rust: 'bg-rust',
   moss: 'bg-moss',
   mustard: 'bg-mustard',
   brass: 'bg-brass',
+  clay: 'bg-clay',
   teal: 'bg-teal',
   plum: 'bg-plum',
 };
@@ -156,8 +160,9 @@ export default class Home implements OnInit, OnDestroy {
     { label: 'p95 latency', value: '—', hint: '', color: METRIC_COLORS[1] },
     { label: 'p99 latency', value: '—', hint: '', color: METRIC_COLORS[2] },
     { label: 'Requests', value: '—', hint: 'ok / failed', color: METRIC_COLORS[3] },
-    { label: 'Generator ceiling', value: 'Not measured', hint: 'validate before comparing backends', color: METRIC_COLORS[4] },
-    { label: 'Status', value: 'Idle', hint: '', color: METRIC_COLORS[5] },
+    { label: 'Memory', value: '—', hint: 'not reported yet', color: METRIC_COLORS[4] },
+    { label: 'Generator ceiling', value: 'Not measured', hint: 'validate before comparing backends', color: METRIC_COLORS[5] },
+    { label: 'Status', value: 'Idle', hint: '', color: METRIC_COLORS[6] },
   ]);
 
   private eventSource: EventSource | undefined;
@@ -445,13 +450,32 @@ export default class Home implements OnInit, OnDestroy {
     };
   }
 
+  protected memoryEntries(memory: Record<string, number> | null): Array<{ key: string; value: number }> {
+    if (!memory) return [];
+    return Object.entries(memory).map(([key, value]) => ({ key, value }));
+  }
+
+  private summarizeMemory(memory: Record<string, number> | null): { value: string; hint: string } {
+    if (!memory) return { value: '—', hint: 'not reported by target' };
+    const entries = Object.entries(memory);
+    const primaryKey = ['rssMB', 'heapUsedMB'].find((k) => k in memory) ?? entries[0]?.[0];
+    const primary = primaryKey ? memory[primaryKey] : undefined;
+    const rest = entries
+      .filter(([key]) => key !== primaryKey)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(', ');
+    return { value: primary !== undefined ? `${primary} MB` : '—', hint: rest };
+  }
+
   private applySnapshot(snapshot: RunSnapshot): void {
     const isCeiling = snapshot.generatorCeilingRps !== null;
+    const memory = this.summarizeMemory(snapshot.memory);
     this.metricCards.set([
       { label: 'Effective RPS', value: `${snapshot.rps}`, hint: `${snapshot.phase} · ${Math.round(snapshot.elapsedMs / 1000)}s`, color: METRIC_COLORS[0] },
       { label: 'p95 latency', value: `${snapshot.latency.p95} ms`, hint: `mean ${snapshot.latency.meanMs} ms`, color: METRIC_COLORS[1] },
       { label: 'p99 latency', value: `${snapshot.latency.p99} ms`, hint: `max ${snapshot.latency.maxMs} ms`, color: METRIC_COLORS[2] },
       { label: 'Requests', value: `${snapshot.totals.ok}/${snapshot.totals.sent}`, hint: `${snapshot.totals.failed} failed`, color: METRIC_COLORS[3] },
+      { label: 'Memory', value: memory.value, hint: memory.hint, color: METRIC_COLORS[4] },
       {
         label: 'Generator ceiling',
         value: isCeiling
@@ -460,9 +484,9 @@ export default class Home implements OnInit, OnDestroy {
             ? `${snapshot.referenceCeilingRps} rps (last)`
             : 'Not measured',
         hint: 'validate before comparing backends',
-        color: METRIC_COLORS[4],
+        color: METRIC_COLORS[5],
       },
-      { label: 'Status', value: snapshot.phase, hint: '', color: METRIC_COLORS[5] },
+      { label: 'Status', value: snapshot.phase, hint: '', color: METRIC_COLORS[6] },
     ]);
   }
 
