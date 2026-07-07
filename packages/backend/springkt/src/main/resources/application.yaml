@@ -6,8 +6,8 @@ spring:
     name: dekaliber
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dekaliber}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME:mac}
+    password: ${DB_PASSWORD:nadhim}
   jpa:
     hibernate:
       ddl-auto: update
