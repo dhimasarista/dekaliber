@@ -48,6 +48,9 @@ graalvmNative {
 	metadataRepository {
 		enabled = false
 	}
+	agent {
+        defaultMode = "standard"
+    }
 }
 
 tasks.withType<Test> {
