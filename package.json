@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "dev:nestjs": "pwsh -File scripts/dev-nestjs.ps1",
+    "dev:springkt": "pwsh -File scripts/dev-springkt.ps1",
+    "dev:panel": "pwsh -File scripts/dev-panel.ps1",
+    "dev:all": "pwsh -File scripts/dev-all.ps1",
     "orchestrator": "node packages/orchestrator/test-runner-service/src/server.mjs",
     "storage:init": "node packages/orchestrator/test-runner-service/src/init-storage.mjs",
     "test": "node --test packages/orchestrator/test-runner-service/test/*.test.mjs",
