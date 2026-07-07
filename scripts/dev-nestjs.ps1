@@ -7,4 +7,4 @@ $ErrorActionPreference = 'Stop'
 $env:PORT = if ($env:nestjs_port) { $env:nestjs_port } else { '3000' }
 
 Set-Location (Join-Path $PSScriptRoot '..\packages\backend\nestjs')
-pnpm start:dev
+pnpm start
