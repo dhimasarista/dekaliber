@@ -1,5 +1,39 @@
 [
   {
+    "name": "java.sql.Statement[]"
+  },
+  {
+    "name": "com.zaxxer.hikari.util.ConcurrentBag$IConcurrentBagEntry[]"
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLStructPGObjectJdbcType",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLIntervalSecondJdbcType",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLInetJdbcType",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLJsonPGObjectJsonType",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLJsonPGObjectJsonbType",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLJsonArrayPGObjectJsonJdbcTypeConstructor",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.type.PostgreSQLJsonArrayPGObjectJsonbJdbcTypeConstructor",
+    "allDeclaredConstructors": true
+  },
+  {
     "name": "org.hibernate.action.internal.ActionLogging_$logger",
     "methods": [
       {
