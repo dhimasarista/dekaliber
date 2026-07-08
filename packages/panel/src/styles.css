@@ -1,28 +1,28 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-paper: #ede1c4;
-  --color-paper-dark: #e2d3ab;
-  --color-card: #f4ead2;
-  --color-ink: #2f2517;
-  --color-ink-faint: #8a7a5c;
-  --color-line: #c9b586;
-  --color-rust: #a8462c;
-  --color-moss: #56693f;
-  --color-mustard: #a9761f;
-  --color-brass: #8a6d3b;
-  --color-teal: #3c6e6e;
-  --color-plum: #6d3b52;
-  --color-clay: #a9673f;
+  --color-paper: #05090b;
+  --color-paper-dark: #020405;
+  --color-card: #0b1116;
+  --color-ink: #d7e6ea;
+  --color-ink-faint: #5c7378;
+  --color-line: #1c2a2f;
+  --color-rust: #ff5f56;
+  --color-moss: #3ddc84;
+  --color-mustard: #f2c94c;
+  --color-brass: #f0a868;
+  --color-teal: #4dd8e6;
+  --color-plum: #b98ce8;
+  --color-clay: #fb923c;
 
-  --font-serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-serif: ui-monospace, 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
 }
 
 :root {
-  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  color-scheme: light;
-  background: #ede1c4;
+  font-family: var(--font-mono);
+  color-scheme: dark;
+  background: #05090b;
 }
 
 html,
@@ -33,10 +33,14 @@ body {
 body {
   margin: 0;
   min-width: 320px;
-  background: #ede1c4;
+  background: #05090b;
 }
 
 app-root {
   display: block;
   min-height: 100vh;
+}
+
+* {
+  scrollbar-color: #1c2a2f #05090b;
 }
