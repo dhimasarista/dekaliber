@@ -1,0 +1,7 @@
+# Go build artifacts
+/dekaliber-fiber
+/tmp/
+
+# Go workspace
+go.work
+go.work.sum
