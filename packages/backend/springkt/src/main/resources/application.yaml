@@ -16,3 +16,12 @@ spring:
       hibernate:
         jdbc:
           batch_size: 50
+        # NOTE: `hibernate.bytecode.provider: none` is NOT set here because this
+        # Hibernate version (7.4.1) ignores that property -- BytecodeProviderInitiator
+        # unconditionally ServiceLoader::loads every registered BytecodeProvider
+        # regardless of config. The ByteBuddy provider is instead excluded at the
+        # classpath level (see the artifact transform in build.gradle.kts) so
+        # ServiceLoader finds none and Hibernate falls back to its built-in no-op
+        # provider -- required for GraalVM native-image, since ByteBuddy generates
+        # proxy classes at runtime via ClassLoader.defineClass, which native-image's
+        # closed-world model doesn't support.

@@ -1,8 +1,0 @@
-{
-  "resources": {
-    "includes": [
-      { "pattern": "\\Qorg/hibernate/\\E.*\\.dtd$" },
-      { "pattern": "\\Qorg/hibernate/\\E.*\\.xsd$" }
-    ]
-  }
-}
