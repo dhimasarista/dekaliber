@@ -1,13 +1,82 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      # With virtual threads enabled below, Tomcat uses a virtual-thread-
+      # per-task executor and this setting stops being a real concurrency
+      # cap -- it's the *platform* (carrier) thread pool size, not a limit
+      # on how many requests/virtual-threads can be in flight. Tuning this
+      # number up or down is NOT the right lever for this stack anymore;
+      # left at Spring Boot's own default (200) rather than raised, since
+      # raising it previously changed nothing meaningful and only added a
+      # config knob that looked significant without being one. The actual
+      # concurrency-relevant knobs here are spring.threads.virtual.enabled
+      # and datasource.hikari.maximum-pool-size below.
+      max: 200
 
 spring:
   application:
     name: dekaliber
+  threads:
+    virtual:
+      # JDBC/Hibernate calls here are blocking-synchronous (no R2DBC/reactive
+      # stack) -- virtual threads let each request block on I/O cheaply
+      # instead of pinning a limited platform-thread-pool slot, without any
+      # code changes (Tomcat's request-handling executor becomes a virtual
+      # thread-per-task executor). Requires JDK 21+; this project already
+      # targets JDK 25 (see java.toolchain in build.gradle.kts).
+      enabled: true
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dekaliber}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:nadhim}
+    hikari:
+      # Default (20) is HikariCP's own connections = ((core_count * 2) +
+      # effective_spindle_count) formula (https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing),
+      # NOT matched to the other backends' pool numbers -- an earlier attempt
+      # to pin every stack's pool to the same literal value (50) turned out
+      # to be its own source of bias. DB is a local single-SSD Postgres
+      # instance (8 cores, spindle_count=1 for SSD/non-RAID), so:
+      # (8 * 2) + 1 = 17, rounded to 20.
+      #
+      # CONFIRMED bottleneck at 20 under 500 VU load (2026-07-12): HikariCP's
+      # own housekeeper log showed "Pool stats (total=20/20, idle=0/20,
+      # active=20, waiting=479)" -- 479 requests queued for a connection
+      # simultaneously.
+      #
+      # Swept 20 -> 100 to chase that queue away -- it got WORSE (1012 rps
+      # at 20 vs 761-933 rps at 100), because Postgres's own
+      # max_connections=100 became the real ceiling: HikariCP asking for
+      # 100 connections left ~0 headroom for Postgres's own background
+      # processes (autovacuum, checkpointer, etc.), to the point that a
+      # plain `psql` couldn't even connect during the pool=100 run
+      # ("FATAL: sorry, too many clients already"). The queue didn't go
+      # away at 100 either (waiting=400) -- it just moved from "waiting for
+      # a HikariCP connection" to "waiting for Postgres itself to have a
+      # free slot", which is strictly worse. Reverted to 20 rather than
+      # raising Postgres's max_connections to chase this further, since 20
+      # was the better-measured number of the two and this project's
+      # Postgres instance isn't tuned/monitored for a much larger
+      # connection count as a matter of course.
+      #
+      # Also ruled out virtual threads as the cause via direct A/B at the
+      # same pool=20 / 500 VU load: VT on = 1012 rps / 456ms avg / 808ms
+      # p95, VT off (SPRING_THREADS_VIRTUAL_ENABLED=false, confirmed via
+      # thread dump -- threads show as "http-nio-8080-exec-N", not
+      # "tomcat-handler-N virtual") = 664 rps / 671ms avg / 1000ms p95.
+      # Virtual threads measurably *help* here; switching to Kotlin
+      # coroutines wouldn't address this bottleneck anyway -- coroutines
+      # are a different scheduler over the same limited Postgres
+      # connection count, not a way to get more connections out of
+      # Postgres.
+      #
+      # Full reproduction in _docs/springkt-run-modes.md (enable with
+      # `JAVA_TOOL_OPTIONS="-Dlogging.level.com.zaxxer.hikari=DEBUG"`, watch
+      # for "Pool stats" lines during a load test). Still overridable via
+      # env var if you want to re-run this sweep after raising Postgres's
+      # max_connections -- see HIKARI_POOL_SIZE in
+      # _infra/scripts/run-springkt-jvm.sh.
+      maximum-pool-size: ${HIKARI_POOL_SIZE:20}
   jpa:
     hibernate:
       ddl-auto: update

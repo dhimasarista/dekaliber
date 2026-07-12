@@ -1,4 +1,22 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "compilerOptions": {
+    // Without an explicit rootDir, tsc infers it as the common ancestor of
+    // every compiled file -- which includes prisma.config.ts at the repo
+    // root, not just src/ -- so output lands at dist/src/main.js instead
+    // of dist/main.js. package.json's start:prod/start:cluster scripts
+    // (`node dist/main`, `node dist/cluster`) assume the flat path, so this
+    // was already broken (Cannot find module 'dist/main') before cluster
+    // mode was added; pinning rootDir here fixes both.
+    "rootDir": "./src",
+    // Overrides tsconfig.json's `incremental: true` for production builds.
+    // Incremental compilation caches which files are "already up to date"
+    // in tsconfig.build.tsbuildinfo; if dist/ is ever deleted or moved
+    // without tsc knowing (happened here -- see rootDir fix above), tsc can
+    // report success while writing nothing at all, because the cache still
+    // thinks the (now-missing) output is current. Not worth the risk for a
+    // build that's meant to produce a runnable dist/ every time.
+    "incremental": false
+  },
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma.config.ts"]
 }

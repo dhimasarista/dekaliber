@@ -8,6 +8,20 @@
 #   _infra/scripts/run-springkt-native.sh              # port 8081 (default)
 #   _infra/scripts/run-springkt-native.sh 8083          # custom port
 #   FORCE_REBUILD=1 _infra/scripts/run-springkt-native.sh   # always rebuild
+#   NATIVE_GC=G1 _infra/scripts/run-springkt-native.sh
+#     Builds with --gc=G1 instead of native-image's default Serial GC.
+#     Serial GC is tuned for small footprint and fast startup (the usual
+#     reason to reach for native-image at all); G1 trades some of both
+#     away for better throughput under sustained allocation pressure --
+#     worth trying if a load test shows GC pause time dominating latency
+#     at high concurrency. Forces a rebuild since GC choice is baked into
+#     the binary; NATIVE_GC set to anything other than the last-used value
+#     invalidates $binary's usefulness for the up-to-date check below, so
+#     this always rebuilds when NATIVE_GC is set, not just when missing.
+#   NATIVE_BUILD_ARGS="--pgo=/path/to/profile.iprof" _infra/scripts/run-springkt-native.sh
+#     Passes through additional native-image build args, e.g. for a
+#     second, PGO-optimized build once you have an .iprof profile from an
+#     instrumented run (see _docs/springkt-run-modes.md).
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
@@ -25,9 +39,19 @@ db_username="${DB_USERNAME:-mac}"
 db_password="${DB_PASSWORD:?DB_PASSWORD must be set in .env}"
 server_port="${1:-8081}"
 
-if [ ! -x "$binary" ] || [ "${FORCE_REBUILD:-0}" = "1" ]; then
+build_args="${NATIVE_BUILD_ARGS:-}"
+if [ -n "${NATIVE_GC:-}" ]; then
+  build_args="--gc=${NATIVE_GC} ${build_args}"
+fi
+
+if [ ! -x "$binary" ] || [ "${FORCE_REBUILD:-0}" = "1" ] || [ -n "${NATIVE_GC:-}" ] || [ -n "${NATIVE_BUILD_ARGS:-}" ]; then
   echo "Building native image (this takes ~7-9 minutes)..." >&2
-  (cd "$springkt_dir" && ./gradlew nativeCompile --console=plain)
+  if [ -n "$build_args" ]; then
+    echo "  with extra build args: $build_args" >&2
+    (cd "$springkt_dir" && ./gradlew nativeCompile --console=plain --build-args="$build_args")
+  else
+    (cd "$springkt_dir" && ./gradlew nativeCompile --console=plain)
+  fi
 fi
 
 exec "$binary" \

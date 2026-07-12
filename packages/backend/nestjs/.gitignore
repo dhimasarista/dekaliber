@@ -2,6 +2,10 @@
 /dist
 /node_modules
 /build
+# TypeScript incremental build cache -- a stale copy of this can make `tsc`
+# report success without writing dist/ at all if it believes (wrongly, e.g.
+# after dist/ was deleted out-of-band) that output is already up to date.
+*.tsbuildinfo
 
 # Logs
 logs
